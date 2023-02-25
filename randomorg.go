@@ -205,3 +205,31 @@ func (r *Random) requestCommand(method string, params map[string]interface{}) ([
 
 	return data, nil
 }
+
+// requestCommand invokes the request and parses all information down to the requested data block.
+func (r *Random) requestSignedCommand(
+	method string,
+	params map[string]interface{},
+) (
+	[]interface{}, // data
+	map[string]interface{}, // random
+	string, // signature
+	error,
+) {
+	result, err := r.invokeRequest(method, params)
+	if err != nil {
+		return nil, nil, "", err
+	}
+
+	r.parseAndSaveUsage(result)
+	sig := r.parseSignature(result)
+
+	random, err := r.jsonMap(result, "random")
+	if err != nil {
+		return nil, nil, "", err
+	}
+
+	data := random["data"].([]interface{})
+
+	return data, random, sig, nil
+}
